@@ -56,13 +56,39 @@ public class Display extends Canvas implements Runnable{
 
 	@Override
 	public void run() {
-		System.out.println("render");
-		while(running) {
-			update();
-			render();
-		}
-		
+	    int frames = 0;
+	    double unprocessedSeconds = 0;
+	    long prevTime = System.nanoTime();
+	    double secondsPerTick = 1 / 60.0;
+	    int tickCount = 0;
+	    boolean ticked = false;
+	    System.out.println("render");
+
+	    while (running) {
+	        long curTime = System.nanoTime();
+	        long passedTime = curTime - prevTime;
+	        prevTime = curTime;
+	        unprocessedSeconds += passedTime / 1000000000.0;
+
+	        while (unprocessedSeconds > secondsPerTick) {
+	            tick();
+	            ticked = true;
+	            unprocessedSeconds -= secondsPerTick;
+	            tickCount++;
+	            if (tickCount % 60 == 0) {
+	                System.out.println(frames + "fps");
+	                frames = 0;
+	            }
+	        }
+
+	        if (ticked) {
+	            render();
+	            frames++;
+	            ticked = false;
+	        }
+	    }
 	}
+
 	
 	private void render() {
 		
@@ -83,7 +109,7 @@ public class Display extends Canvas implements Runnable{
 		g.dispose();
 		bs.show();
 	}
-	private void update() {
+	private void tick() {
 		// TODO Auto-generated method stub
 		
 	}

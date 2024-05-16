@@ -1,6 +1,7 @@
 package com.polygon;
 
 import java.awt.Canvas;
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
@@ -18,17 +19,25 @@ public class Display extends Canvas implements Runnable{
 	public static final int HEIGHT = 600;
 	public static final String TITLE = "Polygon";
 	
+	public static final float LOGIC_UPDATE_RATE = 60.0f;
+	
 	private Thread thread;
 	private boolean running = false;
 	private Render render;
+	private Game game;
 	private Screen screen;
 	private BufferedImage img;
 	private int[] pixels;
 	
 	public Display() {
+		Dimension size = new Dimension(WIDTH, HEIGHT);
+		setPreferredSize(size);
+		setMaximumSize(size);
+		setMinimumSize(size);
 		this.screen = new Screen(WIDTH, HEIGHT);
 		this.img = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
 		this.pixels = ( (DataBufferInt) img.getRaster().getDataBuffer()).getData();
+		this.game = new Game();
 	}
 	
 	private void start() {
@@ -56,37 +65,35 @@ public class Display extends Canvas implements Runnable{
 
 	@Override
 	public void run() {
-	    int frames = 0;
-	    double unprocessedSeconds = 0;
-	    long prevTime = System.nanoTime();
-	    double secondsPerTick = 1 / 60.0;
-	    int tickCount = 0;
-	    boolean ticked = false;
-	    System.out.println("render");
+	    
+	    long lastTime = System.nanoTime();
+		long timer = System.currentTimeMillis();
+		final double ns = 1000000000.0 / LOGIC_UPDATE_RATE; 
+		double delta = 0.0;
+		int frames = 0;
+		int updates = 0;
+		
+		requestFocus();
+		while(running) {
+			
+			long now = System.nanoTime();
+			delta += (now - lastTime) / ns;
+			lastTime = now;
+			while(delta >= 1.0) {
+				update();
+				delta = 0.0;
+				updates++;
+			}
+			render();
+			frames++;
+			
+			if (System.currentTimeMillis() - timer > 1000) {
+				timer += 1000;
+				frames = 0;
+			}
+		}
 
-	    while (running) {
-	        long curTime = System.nanoTime();
-	        long passedTime = curTime - prevTime;
-	        prevTime = curTime;
-	        unprocessedSeconds += passedTime / 1000000000.0;
 
-	        while (unprocessedSeconds > secondsPerTick) {
-	            tick();
-	            ticked = true;
-	            unprocessedSeconds -= secondsPerTick;
-	            tickCount++;
-	            if (tickCount % 60 == 0) {
-	                System.out.println(frames + "fps");
-	                frames = 0;
-	            }
-	        }
-
-	        if (ticked) {
-	            render();
-	            frames++;
-	            ticked = false;
-	        }
-	    }
 	}
 
 	
@@ -98,7 +105,7 @@ public class Display extends Canvas implements Runnable{
 			return;
 		}
 		
-		screen.render();
+		screen.render(game);
 		
 		for (int i = 0; i < WIDTH * HEIGHT; i++) {
 			pixels[i] = screen.pixels[i];
@@ -109,7 +116,7 @@ public class Display extends Canvas implements Runnable{
 		g.dispose();
 		bs.show();
 	}
-	private void tick() {
+	private void update() {
 		// TODO Auto-generated method stub
 		
 	}
@@ -117,12 +124,11 @@ public class Display extends Canvas implements Runnable{
 		Display game = new Display();
 		JFrame frame = new JFrame();
 		frame.add(game);
+		frame.setResizable(false);
 		frame.pack();
 		frame.setTitle(TITLE);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.setSize(WIDTH, HEIGHT);
 		frame.setLocationRelativeTo(null);
-		frame.setResizable(false);
 		frame.setVisible(true);
 		frame.requestFocus();
 		

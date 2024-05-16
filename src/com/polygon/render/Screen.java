@@ -2,6 +2,8 @@ package com.polygon.render;
 
 import java.util.Random;
 
+import com.polygon.Game;
+
 public class Screen extends Render{
 	
 	private Render snow;
@@ -16,7 +18,7 @@ public class Screen extends Render{
 	}
 	
 	
-	public void render() {
+	public void render(Game game) {
 		for (int i = 0; i < width * height; i++) {
 			pixels[i] = 0;
 		}
